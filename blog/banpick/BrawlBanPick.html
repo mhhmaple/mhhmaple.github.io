@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Brawlhalla Ban/Pick</title>
+<style>
+:root {
+  --bg: #0a1525;
+  --panel: #0f1e32;
+  --panel-light: #15273f;
+  --muted: #8fa3bf;
+  --accent: #e74c3c;
+  --ok: #2ecc71;
+  --p1-color: #3498db;
+  --p2-color: #e67e22;
+  --text: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  margin: 0;
+  background: linear-gradient(135deg, #071827 0%, #0a1a2d 50%, #0d1f33 100%);
+  color: var(--text);
+  padding: 20px;
+  min-height: 100vh;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  font-size: 24px;
+  margin: 0;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--p1-color), var(--p2-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+p.lead {
+  margin: 6px 0 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.players {
+  display: flex;
+  gap: 12px;
+}
+
+.player-card {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.player-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.player-card.active {
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--ok);
+  background: var(--panel-light);
+}
+
+.player-card input {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  width: 100%;
+  text-align: center;
+  cursor: pointer;
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+}
+
+.panel {
+  background: var(--panel);
+  padding: 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  min-height: 380px;
+}
+
+.main-panel {
+  background: linear-gradient(145deg, var(--panel) 0%, var(--panel-light) 100%);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-align: center;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.card img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: #0b1220;
+  transition: all 0.2s ease;
+}
+
+.card .name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.state {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.banned {
+  opacity: 0.4;
+  filter: grayscale(100%);
+}
+
+.banned::before {
+  background: var(--accent);
+}
+
+.selected {
+  box-shadow: inset 0 0 0 2px rgba(46, 204, 113, 0.3);
+}
+
+.selected::before {
+  background: var(--ok);
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 120px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.row button {
+  background: rgba(231, 76, 60, 0.2);
+  color: var(--accent);
+  border: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.row button:hover {
+  background: rgba(231, 76, 60, 0.3);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+input[type="search"],
+select,
+input[type="number"],
+input[type="text"],
+input[type="url"] {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  outline: none;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  width: 100%;
+  font-weight: 400;
+}
+
+input[type="search"]:focus,
+select:focus,
+input[type="number"]:focus,
+input[type="text"]:focus,
+input[type="url"]:focus {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
+}
+
+button {
+  background: var(--panel-light);
+  color: var(--text);
+  border: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+button.primary {
+  background: var(--ok);
+  color: white;
+}
+
+.score-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.score-container input {
+  width: 50px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.score-separator {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.small {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.picks-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pick-column {
+  flex: 1;
+}
+
+footer {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.webhook-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.webhook-section input {
+  margin-top: 6px;
+}
+
+.status-indicators {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-selected {
+  background: var(--ok);
+}
+
+.status-banned {
+  background: var(--accent);
+}
+
+.current-player {
+  text-align: center;
+  padding: 8px;
+  background: var(--panel-light);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  font-weight: 600;
+  border-left: 4px solid var(--ok);
+}
+
+.player-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.player-indicator .player-badge {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  text-align: center;
+}
+
+.player-indicator .player-badge.active {
+  background: var(--panel-light);
+  box-shadow: var(--shadow);
+}
+
+.player-badge.p1 {
+  border: 2px solid var(--p1-color);
+  color: var(--p1-color);
+}
+
+.player-badge.p2 {
+  border: 2px solid var(--p2-color);
+  color: var(--p2-color);
+}
+
+.player-badge.active.p1 {
+  background: var(--p1-color);
+  color: white;
+}
+
+.player-badge.active.p2 {
+  background: var(--p2-color);
+  color: white;
+}
+
+@media (max-width: 1024px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .players {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .player-card {
+    min-width: 140px;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+  
+  .picks-container {
+    flex-direction: column;
+  }
+  
+  button {
+    min-width: calc(50% - 4px);
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  
+  .player-card {
+    min-width: 120px;
+    padding: 10px 12px;
+  }
+  
+  button {
+    min-width: 100%;
+  }
+}
+
+/* Animation for state changes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card, .row {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Loading state for images */
+.card img {
+  background: linear-gradient(90deg, #0b1220 0%, #0e1729 50%, #0b1220 100%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+</style>
+</head>
+<body>
+
+<header>
+<div>
+<h1>Brawlhalla Ban/Pick</h1>
+<p class="lead">Click tên người chơi để chọn · Click tướng: Chọn · Ctrl+Click: Ban</p>
+</div>
+<div class="controls">
+  <div class="score-container">
+    <input id="score1" type="number" value="0" min="0" style="width:50px;text-align:center" />
+    <span class="score-separator">:</span>
+    <input id="score2" type="number" value="0" min="0" style="width:50px;text-align:center" />
+  </div>
+  <input id="search" type="search" placeholder="Tìm tướng..." />
+</div>
+</header>
+
+<main class="wrap">
+<section class="panel main-panel">
+  <div class="player-indicator">
+    <div class="player-badge p1 active" data-player="p1">
+      <span id="p1nameDisplay">Player 1</span>
+    </div>
+    <div class="player-badge p2" data-player="p2">
+      <span id="p2nameDisplay">Player 2</span>
+    </div>
+  </div>
+  
+  <div class="status-indicators">
+    <div class="status-item">
+      <div class="status-color status-selected"></div>
+      <span>Đã chọn</span>
+    </div>
+    <div class="status-item">
+      <div class="status-color status-banned"></div>
+      <span>Bị ban</span>
+    </div>
+  </div>
+  
+  <div id="grid" class="grid" aria-live="polite"></div>
+</section>
+
+<aside class="panel sidebar">
+<h3>Trạng thái</h3>
+
+<div class="picks-container">
+  <div class="pick-column">
+    <div class="small">Người chơi 1:</div>
+    <input id="p1name" value="Player 1" style="width:100%; margin-bottom: 8px;" />
+    <div class="small">Tướng đang chơi:</div>
+    <div id="p1selected" style="padding: 8px; background: rgba(52, 152, 219, 0.1); border-radius: var(--radius-sm); margin-bottom: 12px; min-height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+      Chưa chọn
+    </div>
+    <div class="small">Tướng bị ban:</div>
+    <div id="p1bans" class="list"></div>
+  </div>
+  <div class="pick-column">
+    <div class="small">Người chơi 2:</div>
+    <input id="p2name" value="Player 2" style="width:100%; margin-bottom: 8px;" />
+    <div class="small">Tướng đang chơi:</div>
+    <div id="p2selected" style="padding: 8px; background: rgba(230, 126, 34, 0.1); border-radius: var(--radius-sm); margin-bottom: 12px; min-height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+      Chưa chọn
+    </div>
+    <div class="small">Tướng bị ban:</div>
+    <div id="p2bans" class="list"></div>
+  </div>
+</div>
+
+<div style="margin-top:16px">
+  <div class="small">Round / Game</div>
+  <input id="roundgame" type="text" placeholder="Round 1 - Game 1" style="width:100%; margin-top: 4px;" />
+</div>
+
+<div class="webhook-section">
+  <div class="small">Discord Webhook URL</div>
+  <input id="webhookUrl" type="url" placeholder="https://discord.com/api/webhooks/..." />
+</div>
+
+<div class="actions">
+  <button id="reset">🔄 Reset</button>
+  <button id="send" class="primary">📨 Gửi Discord</button>
+</div>
+
+<footer>
+  <div class="small">Ghi chú: #BanALEX <div>
+</footer>
+</aside>
+</main>
+
+<script>
+// Biến lưu webhook URL
+let DISCORD_WEBHOOK_URL = "";
+
+const LEGEND_NAMES = [
+  "Ada", "Arcadia", "Artemis", "Asuri", "Azoth", "Barraza", "Bödvar", "Brynn", "Caspian", "Cassidy", "Cross", "Diana",
+  "Dusk", "Ember", "Ezio", "Fait", "Gnash", "Hattori", "Imugi", "Isaiah", "Jaeyun", "Jhala", "Jiro", "Kaya", "King Zuva",
+  "Koji", "Kor", "Lady Vera", "Lin Fei", "Loki", "Lord Vraxx", "Lucien", "Magyar", "Mako", "Mirage", "Mordex", "Munin",
+  "Nix", "Onyx", "Orion", "Petra", "Priya", "Queen Nai", "Ragnir", "Ransom", "Rayman", "Red Raptor", "Reno", "Scarlet",
+  "Sentinel", "Seven", "Sidra", "Sir Roland", "Tezca", "Teros", "Thatch", "Thea", "Thor", "Ulgrim", "Val", "Vector",
+  "Vivi", "Volkov", "Wu Shang", "Xull", "Yumiko", "Zariel"
+];
+
+// State
+const state = {
+  currentPlayer: 'p1',
+  p1selected: null,
+  p2selected: null,
+  p1bans: new Set(),
+  p2bans: new Set()
+};
+
+const grid = document.getElementById('grid');
+const search = document.getElementById('search');
+const webhookInput = document.getElementById('webhookUrl');
+const p1selected = document.getElementById('p1selected');
+const p2selected = document.getElementById('p2selected');
+const p1nameDisplay = document.getElementById('p1nameDisplay');
+const p2nameDisplay = document.getElementById('p2nameDisplay');
+
+function makeCard(name) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.setAttribute('data-legend', name);
+  
+  const img = document.createElement('img');
+  img.alt = name;
+  img.src = 'https://brawlhalla.wiki.gg/images/thumb/Official_Artwork_' + name.replace(/\s+/g, '_') + '.png/300px-Official_Artwork_' + name.replace(/\s+/g, '_') + '.png';
+  
+  img.onerror = () => {
+    img.style.display = 'none';
+    const ph = document.createElement('div');
+    ph.style.width = '100%';
+    ph.style.height = '100px';
+    ph.style.display = 'flex';
+    ph.style.alignItems = 'center';
+    ph.style.justifyContent = 'center';
+    ph.style.fontSize = '28px';
+    ph.style.background = 'linear-gradient(135deg, #0b1220, #0e1729)';
+    ph.style.borderRadius = 'var(--radius-sm)';
+    ph.style.color = 'var(--muted)';
+    ph.textContent = name.charAt(0).toUpperCase();
+    el.insertBefore(ph, img);
+  };
+  
+  const nm = document.createElement('div');
+  nm.className = 'name';
+  nm.textContent = name;
+  
+  el.appendChild(img);
+  el.appendChild(nm);
+
+  function refresh() {
+    // Kiểm tra nếu tướng bị ban
+    const isBanned = state.p1bans.has(name) || state.p2bans.has(name);
+    // Kiểm tra nếu tướng đang được chọn
+    const isSelected = state.p1selected === name || state.p2selected === name;
+    
+    el.classList.toggle('banned', isBanned);
+    el.classList.toggle('selected', isSelected);
+  }
+  refresh();
+
+  el.onclick = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      // Ban tướng
+      if (state.currentPlayer === 'p1') {
+        if (state.p1bans.has(name)) {
+          state.p1bans.delete(name);
+        } else {
+          state.p1bans.add(name);
+          // Nếu tướng đang được chọn thì bỏ chọn
+          if (state.p1selected === name) state.p1selected = null;
+        }
+      } else {
+        if (state.p2bans.has(name)) {
+          state.p2bans.delete(name);
+        } else {
+          state.p2bans.add(name);
+          // Nếu tướng đang được chọn thì bỏ chọn
+          if (state.p2selected === name) state.p2selected = null;
+        }
+      }
+    } else {
+      // Chọn tướng để chơi
+      if (state.currentPlayer === 'p1') {
+        // Kiểm tra nếu tướng không bị ban
+        if (!state.p1bans.has(name) && !state.p2bans.has(name)) {
+          state.p1selected = name;
+        }
+      } else {
+        // Kiểm tra nếu tướng không bị ban
+        if (!state.p1bans.has(name) && !state.p2bans.has(name)) {
+          state.p2selected = name;
+        }
+      }
+    }
+    renderAll();
+  };
+  
+  return { el, refresh };
+}
+
+let cards = [];
+
+function renderGrid(filter = '') {
+  grid.innerHTML = '';
+  cards = [];
+  const q = filter.trim().toLowerCase();
+  
+  LEGEND_NAMES.forEach(name => {
+    if (q && !name.toLowerCase().includes(q)) return;
+    
+    const { el, refresh } = makeCard(name);
+    grid.appendChild(el);
+    cards.push({ name, refresh, el });
+  });
+}
+
+function renderLists() {
+  const p1b = document.getElementById('p1bans');
+  p1b.innerHTML = '';
+  
+  Array.from(state.p1bans).forEach(n => {
+    const r = document.createElement('div');
+    r.className = 'row';
+    r.textContent = n;
+    
+    const b = document.createElement('button');
+    b.textContent = 'X';
+    b.onclick = () => {
+      state.p1bans.delete(n);
+      renderAll();
+    };
+    
+    r.appendChild(b);
+    p1b.appendChild(r);
+  });
+  
+  const p2b = document.getElementById('p2bans');
+  p2b.innerHTML = '';
+  
+  Array.from(state.p2bans).forEach(n => {
+    const r = document.createElement('div');
+    r.className = 'row';
+    r.textContent = n;
+    
+    const b = document.createElement('button');
+    b.textContent = 'X';
+    b.onclick = () => {
+      state.p2bans.delete(n);
+      renderAll();
+    };
+    
+    r.appendChild(b);
+    p2b.appendChild(r);
+  });
+  
+  // Cập nhật tướng đang chơi
+  p1selected.textContent = state.p1selected || 'Chưa chọn';
+  p2selected.textContent = state.p2selected || 'Chưa chọn';
+  
+  // Cập nhật tên người chơi
+  const p1name = document.getElementById('p1name').value;
+  const p2name = document.getElementById('p2name').value;
+  p1nameDisplay.textContent = p1name;
+  p2nameDisplay.textContent = p2name;
+  
+  // Cập nhật active player
+  document.querySelectorAll('.player-badge').forEach(badge => {
+    badge.classList.remove('active');
+  });
+  document.querySelector(`.player-badge[data-player="${state.currentPlayer}"]`).classList.add('active');
+}
+
+function renderAll() {
+  cards.forEach(c => c.refresh());
+  renderLists();
+}
+
+// Xử lý click vào tên người chơi
+document.querySelectorAll('.player-badge').forEach(badge => {
+  badge.addEventListener('click', () => {
+    state.currentPlayer = badge.getAttribute('data-player');
+    renderAll();
+  });
+});
+
+search.oninput = (e) => renderGrid(e.target.value);
+
+document.getElementById('reset').onclick = () => {
+  if (confirm('Reset toàn bộ?')) {
+    state.p1selected = null;
+    state.p2selected = null;
+    state.p1bans.clear();
+    state.p2bans.clear();
+    renderAll();
+  }
+};
+
+document.getElementById('send').onclick = () => {
+  // Lấy webhook URL từ input
+  DISCORD_WEBHOOK_URL = webhookInput.value.trim();
+  
+  if (!DISCORD_WEBHOOK_URL) {
+    alert('Vui lòng nhập Discord Webhook URL!');
+    webhookInput.focus();
+    return;
+  }
+  
+  const p1name = document.getElementById("p1name").value;
+  const p2name = document.getElementById("p2name").value;
+  const roundgame = document.getElementById("roundgame").value;
+  const score1 = document.getElementById("score1").value;
+  const score2 = document.getElementById("score2").value;
+  
+  // Tạo embed Discord
+  const embed = {
+    title: `🎯 Kết quả — ${roundgame}`,
+    color: 0x3498db,
+    fields: [
+      {
+        name: `🔵 ${p1name}`,
+        value: `**Tướng:** ${state.p1selected || "Chưa chọn"}\n**Ban:** ${Array.from(state.p1bans).join(", ") || "-"}`,
+        inline: true
+      },
+      {
+        name: `🟠 ${p2name}`,
+        value: `**Tướng:** ${state.p2selected || "Chưa chọn"}\n**Ban:** ${Array.from(state.p2bans).join(", ") || "-"}`,
+        inline: true
+      },
+      {
+        name: "📊 Tỉ số",
+        value: `**${p1name}** ${score1} : ${score2} **${p2name}**`,
+        inline: false
+      }
+    ],
+    timestamp: new Date().toISOString(),
+    footer: {
+      text: "Brawlhalla Ban/Pick System"
+    }
+  };
+  
+  const payload = {
+    username: 'Brawlhalla BanPick Bot',
+    embeds: [embed]
+  };
+  
+  fetch(DISCORD_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(response => {
+    if (response.ok) {
+      alert('Đã gửi kết quả lên Discord!');
+    } else {
+      alert('Có lỗi khi gửi kết quả lên Discord! Vui lòng kiểm tra Webhook URL.');
+    }
+  })
+  .catch(error => {
+    alert('Có lỗi kết nối khi gửi kết quả lên Discord!');
+    console.error('Error:', error);
+  });
+};
+
+// Khởi tạo
+renderGrid();
+
+// Load webhook URL từ localStorage nếu có
+window.addEventListener('load', () => {
+  const savedWebhook = localStorage.getItem('brawlhalla_webhook');
+  if (savedWebhook) {
+    webhookInput.value = savedWebhook;
+    DISCORD_WEBHOOK_URL = savedWebhook;
+  }
+  renderAll();
+});
+
+// Lưu webhook URL khi thay đổi
+webhookInput.addEventListener('change', () => {
+  localStorage.setItem('brawlhalla_webhook', webhookInput.value);
+});
+
+// Cập nhật khi tên người chơi thay đổi
+document.getElementById('p1name').addEventListener('input', renderAll);
+document.getElementById('p2name').addEventListener('input', renderAll);
+</script>
+</body>
+</html>
